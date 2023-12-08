@@ -1,0 +1,55 @@
+   version: '3'
+ 
+   services:
+  
+     zookeeper:
+       image: wurstmeister/zookeeper
+       container_name: zookeeper
+       ports:
+       - "2181:2181"
+
+     postgresql:
+        build: ./Postgres
+        ports:
+        - "5432:5432"
+        container_name: postgres
+
+     kafka:
+       image: wurstmeister/kafka
+       ports:
+       - "9092:9092"
+       depends_on:
+         - zookeeper   
+       environment:
+         KAFKA_ADVERTISED_HOST_NAME: kafka
+         KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+
+
+
+
+
+     process-app:
+         build: ./process-app  
+         depends_on:
+         - kafka    
+         - postgresql
+         environment:
+         - DB_SERVER=postgres
+         - POSTGRES_DB=testdb
+         - POSTGRES_USER=testdb_usr
+         - POSTGRES_PASSWORD=testdb_pwd
+         ports:
+         - "8082:8082"
+
+     order-app:
+          build: ./order-app
+          depends_on:
+          - kafka
+          - postgresql 
+          environment:
+          - DB_SERVER=postgres
+          - POSTGRES_DB=testdb
+          - POSTGRES_USER=testdb_usr
+          - POSTGRES_PASSWORD=testdb_pwd 
+          ports:
+          - "8081:8081"
